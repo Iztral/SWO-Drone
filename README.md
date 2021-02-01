@@ -1,2 +1,2 @@
 # SWO
-Training performance visualisation system.
+Training performance visualization system.
