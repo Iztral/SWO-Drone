@@ -1,0 +1,72 @@
+﻿<div class="row">
+    <div class="col-md-7">
+        <div class="row">
+            <RadzenTemplateForm TItem="MemberViewModel" Data="@user" Submit="@OnValidSubmit">
+                <RadzenFieldset Text="@ViewResources.User">
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Email" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Email" @bind-Value="user.Email" />
+                            <RadzenRequiredValidator Component="Email" Text="@ViewResources.Required" Style="position: absolute" />
+                            <RadzenEmailValidator Component="Email" Text="@ViewResources.ValidEmail" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Password" />
+                        </div>
+                        <div class="col">
+                            <RadzenPassword style="display: block" Name="Password" @bind-Value="user.Password" />
+                            <RadzenRequiredValidator Component="Password" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.UName" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Name" @bind-Value="user.Name" />
+                            <RadzenRequiredValidator Component="Name" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Surname" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Surname" @bind-Value="user.Surname" />
+                            <RadzenRequiredValidator Component="Surname" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Role" />
+                        </div>
+                        <div class="col">
+                            <RadzenDropDown @bind-Value="@user.Role" Style="display: block" TextProperty="Text" ValueProperty="Value"
+                                            Data="@(roles.Select(t => new { Text = $"{t.GetDescription()}", Value = t }))" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        @ButtonText
+                    </button>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public MemberViewModel user { get; set; }
+    [Parameter] public string ButtonText { get; set; } = ViewResources.Save;
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    SWO.Models.DataModels.Role[] roles =
+    {
+        Models.DataModels.Role.Admin,
+        Models.DataModels.Role.Instructor,
+        Models.DataModels.Role.Trainee
+    };
+}

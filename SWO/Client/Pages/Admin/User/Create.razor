@@ -1,0 +1,33 @@
+﻿@page "/admin/user/create"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+<h3>@ViewResources.Create</h3>
+
+@if (ShowErrors)
+{
+    <div class="alert alert-danger" role="alert">
+        <p>@Error</p>
+    </div>
+}
+<Form ButtonText="@ViewResources.CreateUser" user="@user" OnValidSubmit="@CreateUser" />
+
+@code {
+    private bool ShowErrors;
+    private string Error = "";
+
+    MemberViewModel user = new MemberViewModel();
+    async Task CreateUser()
+    {
+        var result = await http.PostJsonAsync<RegisterResult>("api/user", user);
+        if (result.Successful)
+        {
+            uriHelper.NavigateTo("admin/user");
+        }
+        else
+        {
+            Error = result.Error;
+            ShowErrors = true;
+        }
+    }
+}

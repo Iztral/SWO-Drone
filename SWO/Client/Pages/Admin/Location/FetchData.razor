@@ -1,0 +1,53 @@
+﻿@page "/admin/location"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Locations</h3>
+<div class="form-group">
+    <a class="btn btn-success" href="admin/location/create"><i class="oi oi-plus"></i> @ViewResources.CreateNew</a>
+</div>
+<br>
+@if (locations == null)
+{
+    <Loading />
+}
+else if (locations.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@locations"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="LocationViewModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="LocationViewModel" Property="Name" Title="@ModelResources.Name" />
+            <RadzenGridColumn TItem="LocationViewModel" Property="Address" Title="@ModelResources.Address" />
+            <RadzenGridColumn TItem="LocationViewModel" Property="Website" Title="@ModelResources.Website" />
+            <RadzenGridColumn TItem="LocationViewModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <ActionButtons ID="@context.ID" PageType="location" />
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+}
+
+@code {
+    LocationViewModel[] locations { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        locations = await http.GetFromJsonAsync<LocationViewModel[]>("api/location");
+    }
+    async Task Delete(int locationID)
+    {
+        var location = locations.First(x => x.ID == locationID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + location.Name + " #" + location.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/location/{locationID}");
+            await OnInitializedAsync();
+        }
+    }
+}

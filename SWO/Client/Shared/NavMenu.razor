@@ -1,0 +1,82 @@
+﻿<div class="top-row pl-4 navbar">
+    <a class="navbar-brand" href=""><img style="width:50px" src="img/logo.png"/></a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> @ViewResources.Home
+            </NavLink>
+        </li>
+        <AuthorizeView Roles="Admin">
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/user">
+                    <span class="oi oi-people" aria-hidden="true"></span> @ViewResources.Users
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/location">
+                    <span class="oi oi-location" aria-hidden="true"></span> @ViewResources.Locations
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/simulator">
+                    <span class="oi oi-monitor" aria-hidden="true"></span> @ViewResources.Simulators
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/simulation">
+                    <span class="oi oi-beaker" aria-hidden="true"></span> @ViewResources.Simulations
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="admin/scenario">
+                    <span class="oi oi-clipboard" aria-hidden="true"></span> @ViewResources.Scenarios
+                </NavLink>
+            </li>
+        </AuthorizeView>
+        <AuthorizeView Roles="Instructor">
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="instructor/trainee">
+                    <span class="oi oi-hard-drive" aria-hidden="true"></span> @ViewResources.TraineeAnalysis
+                </NavLink>
+            </li>
+            <li class="nav-item px-3">
+                <NavLink class="nav-link" href="instructor/scenario">
+                    <span class="oi oi-hard-drive" aria-hidden="true"></span> @ViewResources.ScenarioAnalysis
+                </NavLink>
+            </li>
+        </AuthorizeView>
+        <AuthorizeView>
+            <Authorized>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="LogOut">
+                        <span class="oi oi-account-logout" aria-hidden="true"></span> @ViewResources.Logout
+                    </NavLink>
+                </li>
+            </Authorized>
+            <NotAuthorized>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="Login">
+                        <span class="oi oi-account-login" aria-hidden="true"></span> @ViewResources.Login
+                    </NavLink>
+                </li>
+            </NotAuthorized>
+        </AuthorizeView>
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

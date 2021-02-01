@@ -1,0 +1,66 @@
+﻿@page "/admin/simulator"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Simulators</h3>
+<div class="form-group">
+    <a class="btn btn-success" href="admin/simulator/create"><i class="oi oi-plus"></i> @ViewResources.CreateNew</a>
+</div>
+<br>
+@if (simulators == null)
+{
+    <Loading />
+}
+else if (simulators.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@(simulators.Where(e => currentType >= 0 ? e.Type == currentType : true))"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="SimulatorLocationCombinedModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="SimulatorLocationCombinedModel" Property="Name" Title="@ModelResources.Name" />
+            <RadzenGridColumn TItem="SimulatorLocationCombinedModel" Property="Type" Title="@ModelResources.Type">
+                <FilterTemplate>
+                    <RadzenDropDown @bind-Value="@currentType" TextProperty="Text" ValueProperty="Value" Style="width:100%"
+                                    Data="@(Enum.GetValues(typeof(SWO.Models.DataModels.SimType)).Cast<SWO.Models.DataModels.SimType>().Select(t => new { Text = $"{t.GetDescription()}", Value = t }))" />
+                </FilterTemplate>
+                <Template>
+                    @context.Type.GetDescription()
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SimulatorLocationCombinedModel" Property="LocationName" Title="@ModelResources.Location">
+                <Template>
+                    <a href="admin/location/@context.LocationID">@context.LocationName</a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SimulatorLocationCombinedModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <ActionButtons ID="@context.ID" PageType="simulator" />
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+}
+@code {
+    SimulatorLocationCombinedModel[] simulators { get; set; }
+
+    SWO.Models.DataModels.SimType currentType = SWO.Models.DataModels.SimType.All;
+
+    protected override async Task OnInitializedAsync()
+    {
+        simulators = await http.GetFromJsonAsync<SimulatorLocationCombinedModel[]>("api/simulator/location");
+    }
+    async Task Delete(int simulatorID)
+    {
+        var simulator = simulators.First(x => x.ID == simulatorID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + simulator.Name + " #" + simulator.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/simulator/{simulatorID}");
+            await OnInitializedAsync();
+        }
+    }
+}

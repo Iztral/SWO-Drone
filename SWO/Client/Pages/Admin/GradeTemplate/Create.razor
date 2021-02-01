@@ -1,0 +1,18 @@
+﻿@page "/admin/gradetemplate/create/{simulatorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+<h3>@ViewResources.Create</h3>
+
+<Form ButtonText="@ViewResources.CreateGradeTemplate" gradeTemplate="@gradeTemplate" OnValidSubmit="@CreateGradeTemplate" />
+
+@code {
+    [Parameter] public int simulatorID { get; set; }
+    GradeTemplateViewModel gradeTemplate = new GradeTemplateViewModel();
+    async Task CreateGradeTemplate()
+    {
+        gradeTemplate.SimulatorID = simulatorID;
+        await http.PostAsJsonAsync("api/gradetemplate", gradeTemplate);
+        uriHelper.NavigateTo($"admin/gradetemplate/simulator/{simulatorID}");
+    }
+}

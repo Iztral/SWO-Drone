@@ -1,0 +1,31 @@
+﻿@page "/admin/gradetemplate/edit/{gradeTemplateID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+<h3>@ViewResources.Edit</h3>
+
+@if (gradeTemplate == null)
+{
+    <Loading />
+}
+else
+{
+    <Form ButtonText="@ViewResources.Update" gradeTemplate="@gradeTemplate" OnValidSubmit="@EditGradeTemplate" />
+}
+
+
+@code {
+    [Parameter] public int gradeTemplateID { get; set; }
+    GradeTemplateViewModel gradeTemplate = new GradeTemplateViewModel();
+    protected override async Task OnInitializedAsync()
+    {
+        gradeTemplate = await http.GetFromJsonAsync<GradeTemplateViewModel>($"api/gradetemplate/{gradeTemplateID}");
+    }
+    async Task EditGradeTemplate()
+    {
+        await http.PutAsJsonAsync("api/gradetemplate", gradeTemplate);
+        await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+        uriHelper.NavigateTo($"admin/gradetemplate/simulator/{gradeTemplate.SimulatorID}");
+    }
+}

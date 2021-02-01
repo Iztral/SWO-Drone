@@ -1,0 +1,34 @@
+﻿@page "/admin/simulator/create"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+<h3>@ViewResources.Create</h3>
+
+@if (locations == null)
+{
+    <Loading />
+}
+else if (locations.Length == 0)
+{
+    <text>@ViewResources.NotEnLocations</text>
+}
+else
+{
+    <Form ButtonText="@ViewResources.CreateSimulator" simulator="@simulator" locations="@locations" OnValidSubmit="@CreateSimulator" />
+}
+
+@code {
+    SimulatorViewModel simulator = new SimulatorViewModel();
+    LocationViewModel[] locations { get; set; }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        locations = await http.GetFromJsonAsync<LocationViewModel[]>($"api/location");
+    }
+
+    async Task CreateSimulator()
+    {
+        await http.PostAsJsonAsync("api/simulator", simulator);
+        uriHelper.NavigateTo("admin/simulator");
+    }
+}

@@ -1,0 +1,79 @@
+﻿@page "/admin/simulation"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+@inject NavigationManager uriHelper
+
+<h3>@ViewResources.Simulations</h3>
+<br>
+
+@if (simulations == null)
+{
+    <Loading />
+}
+else if (simulations.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+    <br />
+    <RadzenButton Click="@PopulateSimulations">@ViewResources.Populate</RadzenButton>
+}
+else
+{
+    <RadzenGrid Data="@simulations"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="SimulationDetailsModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="SimulationDetailsModel" Property="TraineeFullName" Title="@ModelResources.Trainee">
+                <Template>
+                    <a href="admin/user/@context.TraineeID">@context.TraineeFullName</a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SimulationDetailsModel" Property="InstructorFullName" Title="@ModelResources.Instructor">
+                <Template>
+                    <a href="admin/user/@context.InstructorID">@context.InstructorFullName</a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SimulationDetailsModel" Property="ScenarioInfo" Title="@ModelResources.Scenario">
+                <Template>
+                    <a href="admin/scenario/@context.ScenarioID">@context.ScenarioName</a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SimulationDetailsModel" Property="GradeSum" Title="@ModelResources.GradeSum" Width="50px">
+                <Template>
+                    @context.GradeSum/@context.ScenarioMaxGradeSum
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="SimulationDetailsModel" Property="Date" Title="@ModelResources.Date" FormatString="{0:MM:yyyy}" />
+            <RadzenGridColumn TItem="SimulationDetailsModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <a class="btn btn-info" href="admin/simulation/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+}
+@code {
+
+    SimulationDetailsModel[] simulations { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        simulations = await http.GetFromJsonAsync<SimulationDetailsModel[]>("api/simulation/details");
+    }
+    async Task Delete(int simulationID)
+    {
+        var simulation = simulations.First(x => x.ID == simulationID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + simulation.Date;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/simulation/{simulationID}");
+            await OnInitializedAsync();
+        }
+    }
+
+    async Task PopulateSimulations()
+    {
+        await http.PostAsJsonAsync("api/simulation/populate", 1);
+        uriHelper.NavigateTo("/");
+    }
+}

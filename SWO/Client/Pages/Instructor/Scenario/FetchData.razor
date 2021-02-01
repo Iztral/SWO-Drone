@@ -1,0 +1,53 @@
+﻿@page "/instructor/scenario"
+@attribute [Authorize(Roles = "Instructor")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Scenarios</h3>
+<br>
+@if (scenarios == null)
+{
+    <Loading />
+}
+else if (scenarios.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@scenarios"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="ScenarioSimulatorCombinedModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="Name" Title="@ModelResources.Name" />
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="SimulatorName" Title="@ModelResources.Simulator">
+                <Template>
+                    <a href="instructor/simulator/@context.SimulatorID">@context.SimulatorName</a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="MaxGradeSum" Title="@ModelResources.MaxGradeSum" Width="30px" />
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="40px">
+                <Template>
+                    <a class="btn btn-info" href="instructor/scenario/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+}
+@code {
+    ScenarioSimulatorCombinedModel[] scenarios { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        scenarios = await http.GetFromJsonAsync<ScenarioSimulatorCombinedModel[]>("api/scenario/simulator");
+    }
+
+    async Task Delete(int scenarioID)
+    {
+        var scenario = scenarios.First(x => x.ID == scenarioID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + scenario.Name + " #" + scenario.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/scenario/{scenarioID}");
+            await OnInitializedAsync();
+        }
+    }
+}

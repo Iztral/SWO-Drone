@@ -1,0 +1,46 @@
+﻿<div class="row">
+    <div class="col-md-7">
+        <div class="row">
+            <RadzenTemplateForm TItem="SensorViewModel" Data="@sensor" Submit="@OnValidSubmit">
+                <RadzenFieldset Text="@ViewResources.Sensor">
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Name" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Name" @bind-Value="sensor.Name" />
+                            <RadzenRequiredValidator Component="Name" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Category" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Category" @bind-Value="sensor.Category" />
+                            <RadzenRequiredValidator Component="Category" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Addendum" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Addendum" @bind-Value="sensor.Addendum" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        @ButtonText
+                    </button>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public SensorViewModel sensor { get; set; }
+    [Parameter] public int simulatorID { get; set; }
+    [Parameter] public string ButtonText { get; set; } = ViewResources.Save;
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+}

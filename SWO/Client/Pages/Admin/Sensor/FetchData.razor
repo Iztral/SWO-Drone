@@ -1,0 +1,57 @@
+﻿@page "/admin/sensor/simulator/{simulatorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+
+<h3>@ViewResources.Sensors</h3>
+<div class="form-group">
+    <a class="btn btn-success" href="admin/sensor/create/@simulatorID"><i class="oi oi-plus"></i> @ViewResources.CreateNew</a>
+</div>
+
+<br>
+@if (sensors == null)
+{
+    <Loading />
+}
+else if (sensors.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@sensors"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="SensorViewModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="SensorViewModel" Property="Name" Title="@ModelResources.Name" />
+            <RadzenGridColumn TItem="SensorViewModel" Property="Category" Title="@ModelResources.Category" />
+            <RadzenGridColumn TItem="SensorViewModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <ActionButtons ID="@context.ID" PageType="sensor" />
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+    <br />
+    <a href="admin/simulator/@simulatorID/"><h3>@ViewResources.BackSimulator</h3></a>
+}
+
+@code {
+    [Parameter] public int simulatorID { get; set; }
+    SensorViewModel[] sensors { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        sensors = await http.GetFromJsonAsync<SensorViewModel[]>($"api/sensor/simulator/{simulatorID}");
+    }
+    async Task Delete(int sensorID)
+    {
+        var sensor = sensors.First(x => x.ID == sensorID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + sensor.Name + " #" + sensor.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/sensor/{sensorID}");
+            await OnInitializedAsync();
+        }
+    }
+}

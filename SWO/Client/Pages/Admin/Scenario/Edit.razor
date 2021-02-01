@@ -1,0 +1,29 @@
+﻿@page "/admin/scenario/edit/{scenarioID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+<h3>@ViewResources.Edit</h3>
+
+@if (scenario == null)
+{
+    <Loading />
+}
+else
+{
+    <FormEdit ButtonText="@ViewResources.Update" scenario="@scenario" OnValidSubmit="@EditScenario" />
+}
+@code {
+    [Parameter] public int scenarioID { get; set; }
+    ScenarioViewModel scenario = new ScenarioViewModel();
+    protected async override Task OnParametersSetAsync()
+    {
+        scenario = await http.GetFromJsonAsync<ScenarioViewModel>($"api/scenario/{scenarioID}");
+    }
+    async Task EditScenario()
+    {
+        await http.PutAsJsonAsync("api/scenario", scenario);
+        await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+        uriHelper.NavigateTo("admin/scenario");
+    }
+}

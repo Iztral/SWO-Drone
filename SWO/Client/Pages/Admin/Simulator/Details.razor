@@ -1,0 +1,70 @@
+﻿@page "/admin/simulator/{simulatorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Simulator</h3>
+<br>
+@if (simulator == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.User">
+                <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div>@ModelResources.Identifier</div>
+                            <b>@simulator.ID</b>
+                            <div style="margin-top:20px">@ModelResources.Name:</div>
+                            <b>@simulator.Name</b>
+                            <div style="margin-top:20px">@ModelResources.Type</div>
+                            <b>@simulator.Type.GetDescription()</b>
+                            <br />
+                        </div>
+                        <div class="col-md-6">
+                            <div>@ModelResources.Location</div>
+                            <b>
+                                <a href="admin/location/@simulator.LocationID">
+                                    @simulator.LocationName
+                                </a>
+                            </b>
+                            <div style="margin-top:20px">@ViewResources.Sensors</div>
+                            <b>
+                                <a class="btn btn-info" href="admin/sensor/simulator/@simulator.ID">
+                                    <span style="font-size:30px" class="oi oi-dashboard" aria-hidden="true" />
+                                </a>
+                            </b>
+                            <div style="margin-top:20px">@ViewResources.GradeTemplates</div>
+                            <b>
+                                <a class="btn btn-info" href="admin/gradetemplate/simulator/@simulator.ID">
+                                    <span style="font-size:30px" class="oi oi-brush" aria-hidden="true" />
+                                </a>
+                            </b>
+                        </div>
+                    </div>
+                </RadzenCard>
+            </Radzen.Blazor.RadzenTabsItem>
+            @if (!string.IsNullOrEmpty(simulator.Description))
+            {
+                <Radzen.Blazor.RadzenTabsItem Text="@ModelResources.Description">
+                    <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                        <p>@simulator.Description</p>
+                    </RadzenCard>
+                </Radzen.Blazor.RadzenTabsItem>
+            }
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+    [Parameter] public int simulatorID { get; set; }
+    SimulatorLocationCombinedModel simulator { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        simulator = await http.GetFromJsonAsync<SimulatorLocationCombinedModel>($"api/simulator/{simulatorID}/location");
+    }
+}

@@ -1,0 +1,40 @@
+﻿@page "/admin/user/{userID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.User</h3>
+<br>
+@if (user == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+        <div class="row">
+            <div class="col-md-6">
+                <div>@ModelResources.Identifier</div>
+                <b>@user.ID</b>
+                <div style="margin-top:20px">@ViewResources.User:</div>
+                <b>@(user.Name + " " + user.Surname)</b>
+                <br />
+            </div>
+            <div class="col-md-6">
+                <div>@ModelResources.Email</div>
+                <b>@user.Email</b>
+                <div style="margin-top:20px">@ModelResources.Role</div>
+                <b>@user.Role.GetDescription()</b>
+            </div>
+        </div>
+    </RadzenCard>
+}
+
+@code {
+    [Parameter] public int userID { get; set; }
+    MemberViewModel user { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await http.GetFromJsonAsync<MemberViewModel>($"api/user/{userID}");
+    }
+}

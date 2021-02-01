@@ -1,0 +1,62 @@
+﻿@page "/admin/gradetemplate/{gradeTemplateID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.GradeTemplate</h3>
+<br>
+@if (gradeTemplate == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.GradeTemplate">
+                <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div>@ModelResources.Identifier</div>
+                            <b>@gradeTemplate.ID</b>
+                            <div style="margin-top:20px">@ModelResources.Name:</div>
+                            <b>@gradeTemplate.Name</b>
+                            <div style="margin-top:20px">@ModelResources.MaxPoints:</div>
+                            <b>@gradeTemplate.MaxPoints</b>
+                            <div style="margin-top:20px">@ModelResources.OptimalTime:</div>
+                            <b>@gradeTemplate.OptimalTime (s)</b>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="margin-top:20px">@ModelResources.Phase</div>
+                            <b>
+                                @gradeTemplate.Phase
+                            </b>
+                            <div>@ModelResources.Note</div>
+                            <b>
+                                @gradeTemplate.Note
+                            </b>
+                        </div>
+                    </div>
+                </RadzenCard>
+            </Radzen.Blazor.RadzenTabsItem>
+            @if (!string.IsNullOrEmpty(gradeTemplate.Description))
+            {
+                <Radzen.Blazor.RadzenTabsItem Text="@ModelResources.Description">
+                    <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                        <p>@gradeTemplate.Description</p>
+                    </RadzenCard>
+                </Radzen.Blazor.RadzenTabsItem>
+            }
+        </Tabs>
+    </RadzenTabs>
+
+}
+
+@code {
+    [Parameter] public int gradeTemplateID { get; set; }
+    GradeTemplateViewModel gradeTemplate { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        gradeTemplate = await http.GetFromJsonAsync<GradeTemplateViewModel>($"api/gradetemplate/{gradeTemplateID}");
+    }
+}

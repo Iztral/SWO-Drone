@@ -1,0 +1,34 @@
+﻿@page "/admin/scenario/create"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+<h3>@ViewResources.Create</h3>
+
+@if (simulators == null)
+{
+    <Loading />
+}
+else if (simulators.Length == 0)
+{
+    <text>@ViewResources.NotEnLocations</text>
+}
+else
+{
+    <Form ButtonText="@ViewResources.CreateScenario" scenario="@scenario" simulators="@simulators" OnValidSubmit="@CreateScenario" />
+}
+
+@code {
+    ScenarioViewModel scenario = new ScenarioViewModel();
+    SimulatorViewModel[] simulators { get; set; }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        simulators = await http.GetFromJsonAsync<SimulatorViewModel[]>($"api/simulator");
+    }
+
+    async Task CreateScenario()
+    {
+        await http.PostAsJsonAsync("api/scenario", scenario);
+        uriHelper.NavigateTo("admin/scenario");
+    }
+}

@@ -1,0 +1,225 @@
+﻿@page "/instructor/scenario/{scenarioID:int}"
+@attribute [Authorize(Roles = "Instructor")]
+@inject HttpClient http
+@inject IJSRuntime js
+@inject NavigationManager uriHelper
+@inject Compare CompareList
+
+<h3>@ViewResources.Simulations</h3>
+<br>
+
+<RadzenSelectBar @bind-Value="DisplayController" Change="@((args) => ChangeSelection(args))" TValue="int" Style="margin-bottom: 20px;">
+    <Items>
+        <RadzenSelectBarItem Text="@ViewResources.Details" Value="1" />
+        <RadzenSelectBarItem Text="@ViewResources.Simulations" Value="2" />
+        <RadzenSelectBarItem Text="@ViewResources.Trainees" Value="3" />
+    </Items>
+</RadzenSelectBar>
+<br>
+
+@if (DisplayController == 1)
+{
+   @if (scenario == null)
+    {
+        <Loading />
+    }
+    else
+    {
+        <RadzenTabs>
+            <Tabs>
+                <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Scenario">
+                    <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div>@ModelResources.Identifier</div>
+                                <b>@scenario.ID</b>
+                                <div style="margin-top:20px">@ModelResources.Simulator:</div>
+                                <b>
+                                    <a href="instructor/simulator/@scenario.SimulatorID">
+                                        @scenario.SimulatorName
+                                    </a>
+                                </b>
+                            </div>
+                            <div class="col-md-6">
+                                <div>@ModelResources.Name</div>
+                                <b>@scenario.Name</b>
+                                <div style="margin-top:20px">@ModelResources.MaxGradeSum</div>
+                                <b>@scenario.MaxGradeSum</b>
+                            </div>
+                        </div>
+                    </RadzenCard>
+                </Radzen.Blazor.RadzenTabsItem>
+                @if (!string.IsNullOrEmpty(scenario.Description))
+                {
+                    <Radzen.Blazor.RadzenTabsItem Text="@ModelResources.Description">
+                        <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                            <p>@scenario.Description</p>
+                        </RadzenCard>
+                    </Radzen.Blazor.RadzenTabsItem>
+                }
+                @if (gradeInfos.Count > 0)
+                {
+                    <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.GradeTemplates">
+                        <RadzenGrid Data="@gradeInfos"
+                                    AllowFiltering="true" AllowSorting="true" TItem="ScenarioGradesTemplatesInfoModel" ColumnWidth="200px">
+                            <Columns>
+                                <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Name" Title="@ModelResources.Name" />
+                                <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="MaxPoints" Title="@ModelResources.MaxPoints" Width="30px" />
+                                <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Description" Title="@ModelResources.Description" />
+                                <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Note" Title="@ModelResources.Note" />
+                                <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Phase" Title="@ModelResources.Phase" Width="30px" />
+                                <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Assigned" Title="@ModelResources.Assigned" Width="30px">
+                                    <Template>
+                                        <RadzenCheckBox Disabled="true" @bind-Value="@context.Assigned" />
+                                    </Template>
+                                </RadzenGridColumn>
+                            </Columns>
+                        </RadzenGrid>
+                    </Radzen.Blazor.RadzenTabsItem>
+                }
+            </Tabs>
+        </RadzenTabs>
+    }
+}
+@if (DisplayController == 2)
+{
+    @if (simulations == null)
+    {
+        <Loading />
+    }
+    else if (simulations.Length == 0)
+    {
+        <text>@ViewResources.NoRecords</text>
+    }
+    else
+    {
+        <RadzenGrid Data="@simulations"
+                    AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="SimulationDetailsModel" ColumnWidth="200px">
+            <Columns>
+                <RadzenGridColumn TItem="SimulationDetailsModel" Property="TraineeFullName" Title="@ModelResources.Trainee">
+                    <Template>
+                        <a href="instructor/trainee/@context.TraineeID">@context.TraineeFullName</a>
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="SimulationDetailsModel" Property="InstructorFullName" Title="@ModelResources.Instructor" />
+                <RadzenGridColumn TItem="SimulationDetailsModel" Property="GradeSum" Title="@ModelResources.GradeSum" Width="50px">
+                    <Template>
+                        @context.GradeSum/@context.ScenarioMaxGradeSum
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="SimulationDetailsModel" Property="Date" Title="@ModelResources.Date" FormatString="{0:MM:yyyy}" />
+                <RadzenGridColumn TItem="SimulationDetailsModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false">
+                    <Template>
+                        <a class="btn btn-info" href="instructor/simulation/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="SimulationDetailsModel" Property="Compare" Title="@ViewResources.Compare" Width="50px" Filterable="false" Sortable="false">
+                    <Template>
+                        <RadzenCheckBox TValue="bool" Change="@(args => AddToCompare(args, context.ID))" />
+                    </Template>
+                </RadzenGridColumn>
+            </Columns>
+        </RadzenGrid>
+        <RadzenButton Click="@CompareSimulations">@ViewResources.Compare</RadzenButton>
+    }
+}
+@if (DisplayController == 3)
+{
+    @if (trainees == null)
+    {
+        <Loading />
+    }
+    else if (trainees.Length == 0)
+    {
+        <text>@ViewResources.NoRecords</text>
+    }
+    else
+    {
+        <RadzenGrid Data="@trainees"
+                    AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="TraineeCombinedModel" ColumnWidth="200px">
+            <Columns>
+                <RadzenGridColumn TItem="TraineeCombinedModel" Property="Name" Title="@ModelResources.Name">
+                    <Template>
+                        @context.Name
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="TraineeCombinedModel" Property="Surname" Title="@ModelResources.Surname">
+                    <Template>
+                        @context.Surname
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="TraineeCombinedModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false">
+                    <Template>
+                        <a class="btn btn-info" href="instructor/trainee/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="TraineeCombinedModel" Property="Compare" Title="@ViewResources.Compare" Width="50px" Filterable="false" Sortable="false">
+                    <Template>
+                        <RadzenCheckBox TValue="bool" Change="@(args => AddToCompare(args, context.ID))" />
+                    </Template>
+                </RadzenGridColumn>
+            </Columns>
+        </RadzenGrid>
+        <RadzenButton Click="@CompareLastSimulationTime">@ViewResources.Compare</RadzenButton>
+    }
+}
+
+@code {
+    [Parameter] public int scenarioID { get; set; }
+
+    ScenarioSimulatorCombinedModel scenario { get; set; }
+    List<ScenarioGradesTemplatesInfoModel> gradeInfos { get; set; }
+
+    SimulationDetailsModel[] simulations { get; set; }
+    TraineeCombinedModel[] trainees { get; set; }
+
+    public int DisplayController = 1;
+
+    async Task ChangeSelection(int value)
+    {
+        CompareList.List = new List<int>();
+        if (value == 2)
+        {
+            simulations = await http.GetFromJsonAsync<SimulationDetailsModel[]>($"api/simulation/scenario/{scenarioID}/details");
+        }
+        else if (value == 3)
+        {
+            trainees = await http.GetFromJsonAsync<TraineeCombinedModel[]>($"api/trainee/hasSimulationsInScenario/{scenarioID}");
+        }
+    }
+
+    private void AddToCompare(bool value, int traineeID)
+    {
+
+        if (!CompareList.List.Exists(x => x == traineeID) && value == true)
+        {
+            CompareList.List.Add(traineeID);
+        }
+        else if (CompareList.List.Exists(x => x == traineeID) && value == false)
+        {
+            CompareList.List.Remove(traineeID);
+        }
+    }
+
+    private void CompareSimulations()
+    {
+        if (CompareList.List.Count > 1)
+        {
+            uriHelper.NavigateTo($"instructor/scenario/compare/simulation/");
+        }
+    }
+
+    private void CompareLastSimulationTime()
+    {
+        if (CompareList.List.Count > 1)
+        {
+            uriHelper.NavigateTo($"instructor/scenario/{scenarioID}/compare/time");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        scenario = await http.GetFromJsonAsync<ScenarioSimulatorCombinedModel>($"api/scenario/{scenarioID}/simulator");
+        gradeInfos = await http.GetFromJsonAsync<List<ScenarioGradesTemplatesInfoModel>>($"api/scengradetemp/scenario/{scenarioID}");
+    }
+}

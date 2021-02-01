@@ -1,0 +1,56 @@
+﻿@page "/admin/scenario"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Scenarios</h3>
+<div class="form-group">
+    <a class="btn btn-success" href="admin/scenario/create"><i class="oi oi-plus"></i> @ViewResources.CreateNew</a>
+</div>
+<br>
+@if (scenarios == null)
+{
+    <Loading />
+}
+else if (scenarios.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@scenarios"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="ScenarioSimulatorCombinedModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="Name" Title="@ModelResources.Name" />
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="SimulatorName" Title="@ModelResources.Simulator">
+                <Template>
+                    <a href="simulator/@context.SimulatorID">@context.SimulatorName</a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="MaxGradeSum" Title="@ModelResources.MaxGradeSum" Width="30px" />
+            <RadzenGridColumn TItem="ScenarioSimulatorCombinedModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <ActionButtons ID="@context.ID" PageType="scenario" />
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+}
+@code {
+    ScenarioSimulatorCombinedModel[] scenarios { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        scenarios = await http.GetFromJsonAsync<ScenarioSimulatorCombinedModel[]>("api/scenario/simulator");
+    }
+    async Task Delete(int scenarioID)
+    {
+        var scenario = scenarios.First(x => x.ID == scenarioID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + scenario.Name + " #" + scenario.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/scenario/{scenarioID}");
+            await OnInitializedAsync();
+        }
+    }
+}

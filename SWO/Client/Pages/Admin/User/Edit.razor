@@ -1,0 +1,47 @@
+﻿@page "/admin/user/edit/{userID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+<h3>@ViewResources.Edit</h3>
+@if (user == null)
+{
+    <Loading />
+}
+else
+{
+    @if (ShowErrors)
+    {
+        <div class="alert alert-danger" role="alert">
+            <p>@Error</p>
+        </div>
+    }
+    <FormEdit ButtonText="@ViewResources.Update" user="user" OnValidSubmit="@EditUser" />
+}
+@code {
+    private bool ShowErrors;
+    private string Error = "";
+
+    [Parameter] public int userID { get; set; }
+    MemberViewModel user = new MemberViewModel();
+
+    protected async override Task OnParametersSetAsync()
+    {
+        user = await http.GetFromJsonAsync<MemberViewModel>($"api/user/{userID}");
+    }
+
+    async Task EditUser()
+    {
+        var result = await http.PutJsonAsync<RegisterResult>("api/user", user);
+        if (result.Successful)
+        {
+            await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+            uriHelper.NavigateTo("admin/user");
+        }
+        else
+        {
+            Error = result.Error;
+            ShowErrors = true;
+        }
+    }
+}

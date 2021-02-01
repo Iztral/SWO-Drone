@@ -1,0 +1,30 @@
+﻿@page "/admin/sensor/edit/{sensorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+<h3>@ViewResources.Edit</h3>
+
+@if (sensor == null)
+{
+    <Loading />
+}
+else
+{
+    <Form ButtonText="@ViewResources.Update" sensor="@sensor" OnValidSubmit="@EditSensor" />
+}
+
+@code {
+    [Parameter] public int sensorID { get; set; }
+    SensorViewModel sensor = new SensorViewModel();
+    protected override async Task OnInitializedAsync()
+    {
+        sensor = await http.GetFromJsonAsync<SensorViewModel>($"api/sensor/{sensorID}");
+    }
+    async Task EditSensor()
+    {
+        await http.PutAsJsonAsync("api/sensor", sensor);
+        await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+        uriHelper.NavigateTo($"admin/sensor/simulator/{sensor.SimulatorID}");
+    }
+}

@@ -1,0 +1,66 @@
+﻿<div class="row">
+    <div class="col-md-7">
+        <div class="row">
+            <RadzenTemplateForm TItem="SimulatorViewModel" Data="@simulator" Submit="@OnValidSubmit">
+                <RadzenFieldset Text="@ViewResources.Simulator">
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Name" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Name" @bind-Value="simulator.Name" />
+                            <RadzenRequiredValidator Component="Name" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Location" />
+                        </div>
+                        <div class="col">
+                            <RadzenDropDown Name="LocationID" @bind-Value="@simulator.LocationID" Style="display: block" TextProperty="Text" ValueProperty="Value"
+                                            Data="@locations.Select(t => new { Text = $"{t.Name}", Value = t.ID })" />
+                            <RadzenNumericRangeValidator Component="LocationID" Min="1" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Type" />
+                        </div>
+                        <div class="col">
+                            <RadzenDropDown @bind-Value="@simulator.Type" Style="display: block" TextProperty="Text" ValueProperty="Value"
+                                            Data="@(simTypes.Select(t => new { Text = $"{t.GetDescription()}", Value = t }))" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Description" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Description" @bind-Value="simulator.Description" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        @ButtonText
+                    </button>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public SimulatorViewModel simulator { get; set; }
+    [Parameter] public LocationViewModel[] locations { get; set; }
+    [Parameter] public string ButtonText { get; set; } = ViewResources.Save;
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    SWO.Models.DataModels.SimType[] simTypes = 
+    { 
+        Models.DataModels.SimType.DJI_Phantom, 
+        Models.DataModels.SimType.DJI_Mavic, 
+        Models.DataModels.SimType.DJI_Mini, 
+        Models.DataModels.SimType.VR_DJI_Phantom,
+        Models.DataModels.SimType.VR_DJI_Mavic,
+        Models.DataModels.SimType.VR_DJI_Mini
+    };
+}

@@ -1,0 +1,15 @@
+﻿@page "/admin/location/create"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+<h3>@ViewResources.Create</h3>
+<Form ButtonText="@ViewResources.CreateLocation" location="@location" OnValidSubmit="@CreateLocation" />
+
+@code {
+    LocationViewModel location = new LocationViewModel();
+    async Task CreateLocation()
+    {
+        await http.PostAsJsonAsync("api/location", location);
+        uriHelper.NavigateTo("admin/location");
+    }
+}

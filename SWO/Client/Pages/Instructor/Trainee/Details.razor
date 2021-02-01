@@ -1,0 +1,143 @@
+@page "/instructor/trainee/{traineeID:int}"
+@attribute [Authorize(Roles = "Instructor")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Trainee</h3>
+@if (trainee == null)
+{
+    <Loading />
+}
+else
+{
+    <h3>@trainee.Name @trainee.Surname</h3>
+    <br>
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Trainee">
+                <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div>@ModelResources.Name</div>
+                            <b>@trainee.Name</b>
+                        </div>
+                        <div class="col-md-6">
+                            <div>@ModelResources.Surname</div>
+                            <b>
+                                @trainee.Surname
+                            </b>
+                        </div>
+                    </div>
+                </RadzenCard>
+            </Radzen.Blazor.RadzenTabsItem>
+            @if (simulations.Length > 0)
+            {
+                <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Simulations">
+                    <RadzenGrid Data="@simulations"
+                                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="SimulationDetailsModel" ColumnWidth="200px">
+                        <Columns>
+                            <RadzenGridColumn TItem="SimulationDetailsModel" Property="InstructorFullName" Title="@ModelResources.Instructor" />
+                            <RadzenGridColumn TItem="SimulationDetailsModel" Property="ScenarioName" Title="@ModelResources.Scenario">
+                                <Template>
+                                    <a href="instructor/scenario/@context.ScenarioID">@context.ScenarioName</a>
+                                </Template>
+                            </RadzenGridColumn>
+                            <RadzenGridColumn TItem="SimulationDetailsModel" Property="GradeSum" Title="@ModelResources.GradeSum">
+                                <Template>
+                                    @context.GradeSum/@context.ScenarioMaxGradeSum
+                                </Template>
+                            </RadzenGridColumn>
+                            <RadzenGridColumn TItem="SimulationDetailsModel" Property="Date" Title="@ModelResources.Date" FormatString="{0:MM:yyyy}" />
+                            <RadzenGridColumn TItem="SimulationDetailsModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false">
+                                <Template>
+                                    <a class="btn btn-info" href="instructor/simulation/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                                </Template>
+                            </RadzenGridColumn>
+                        </Columns>
+                    </RadzenGrid>
+                </Radzen.Blazor.RadzenTabsItem>
+                <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Charts">
+                    <RadzenDropDown TValue="int" TextProperty="SelectorName" ValueProperty="Selector" Data="chartSelectors" @bind-Value="DisplayController">
+                    </RadzenDropDown>
+
+                    @if (DisplayController == 1)
+                    {
+                        <RadzenChart>
+                            <RadzenColumnSeries Data="@overallScenarios" CategoryProperty="Name" Title="@ViewResources.Trainee" LineType="LineType.Solid" ValueProperty="AverageScore" />
+                            <RadzenColumnOptions Radius="5" />
+                            <RadzenValueAxis Formatter="@FormatPercentage" FormatString="{0:P}">
+                                <RadzenGridLines Visible="true" />
+                                <RadzenAxisTitle Text="@ViewResources.AveragePercentage" />
+                            </RadzenValueAxis>
+                        </RadzenChart>
+                    }
+                    else if (DisplayController == 2)
+                    {
+                        <RadzenChart>
+                            @foreach (var scenario in overallScenarios)
+                            {
+                                if (scenario.DataItems.Count > 0)
+                                {
+                                    <RadzenLineSeries Smooth="true" Data="@scenario.DataItems" CategoryProperty="Date"
+                                                      Title="@scenario.Name" LineType="LineType.Solid" ValueProperty="ScorePercentage">
+                                        <RadzenMarkers MarkerType="MarkerType.Auto" />
+                                    </RadzenLineSeries>
+                                }
+                            }
+                            <RadzenCategoryAxis Padding="20" Visible="true" FormatString="{0:MM:yyyy}">
+                                <RadzenGridLines Visible="true" />
+                                <RadzenAxisTitle Text="@ModelResources.Date" />
+                            </RadzenCategoryAxis>
+                            <RadzenValueAxis FormatString="{0:P}" Formatter="@FormatPercentage">
+                                <RadzenGridLines Visible="true" />
+                                <RadzenAxisTitle Text="@ViewResources.GradeInPercentage" />
+                            </RadzenValueAxis>
+                        </RadzenChart>
+                    }
+                </Radzen.Blazor.RadzenTabsItem>
+            }
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+    [Parameter] public int traineeID { get; set; }
+
+    TraineeCombinedModel trainee { get; set; }
+
+    SimulationDetailsModel[] simulations { get; set; }
+
+    List<OverallScenarioChartModel> overallScenarios { get; set; }
+
+    int DisplayController { get; set; } = 1;
+
+    class ChartSelector
+    {
+        public int Selector { get; set; }
+        public string SelectorName { get; set; }
+    }
+
+    List<ChartSelector> chartSelectors = new List<ChartSelector>
+{
+        new ChartSelector
+        {
+            Selector = 1,
+            SelectorName = ViewResources.AverageScenarioBar
+        },
+        new ChartSelector
+        {
+            Selector = 2,
+            SelectorName = ViewResources.AllScoresAllScenarios
+        }
+    };
+
+    string FormatPercentage(object value)
+    {
+        return ((double)value).ToString();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        trainee = await http.GetFromJsonAsync<TraineeCombinedModel>($"api/trainee/{traineeID}");
+        simulations = await http.GetFromJsonAsync<SimulationDetailsModel[]>($"api/simulation/trainee/{traineeID}/details");
+        overallScenarios = await http.GetFromJsonAsync<List<OverallScenarioChartModel>>($"api/trainee/scenario/{traineeID}");
+    }
+}

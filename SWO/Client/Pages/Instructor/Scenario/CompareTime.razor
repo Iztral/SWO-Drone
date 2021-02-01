@@ -1,0 +1,107 @@
+﻿@page "/instructor/scenario/{scenarioID:int}/compare/time/"
+@attribute [Authorize(Roles = "Instructor")]
+@inject Compare CompareTrainees
+@inject HttpClient http
+@inject IJSRuntime js
+
+
+<h3>@ViewResources.Trainee</h3>
+<br>
+@if (trainees == null)
+{
+    <Loading />
+}
+else
+{
+    if (chartSelectors.Count > 0)
+    {
+        <RadzenLabel Text="Wybór oceny" />
+        <br />
+        <RadzenDropDown TValue="int" TextProperty="SelectorName" SelectedItem="DisplayController" ValueProperty="Selector" ValueChanged="ChangeSelection" Data="chartSelectors" />
+        <br Style="margin-bottom: 20px;" />
+
+        <RadzenLabel Text="Tolerancja " />
+        <RadzenLabel Text="@gradeToleratedTime.ToString()" />
+        <br Style="margin-bottom: 10px;" />
+
+        if (gradeOptimalTime > 0)
+        {
+            <RadzenSlider Min="0" Max="maxToleration" @bind-Value="gradeToleratedTime" TValue="int" Style="margin-bottom: 20px;" />
+            <br Style="margin-bottom: 20px;" />
+        }
+        <RadzenGrid Data="@trainees"
+                    AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="TraineeSimulationCombinedModel" ColumnWidth="200px">
+            <Columns>
+                <RadzenGridColumn TItem="TraineeSimulationCombinedModel" Property="Name" Title="@ModelResources.UName" />
+                <RadzenGridColumn TItem="TraineeSimulationCombinedModel" Property="Surname" Title="@ModelResources.Surname" />
+                <RadzenGridColumn TItem="TraineeSimulationCombinedModel" Property="TimeTaken" Title="@ModelResources.TimeTaken">
+                    <Template Context="data">
+                        @if (data.TimeTaken < (gradeOptimalTime + gradeToleratedTime) || gradeOptimalTime == 0)
+                        {
+                            <span style='color:black'>@data.TimeTaken (s)</span>
+                        }
+                        else
+                        {
+                            <span style='color:orange'>@data.TimeTaken (s)</span>
+                        }
+                    </Template>
+                </RadzenGridColumn>
+            </Columns>
+        </RadzenGrid>
+    }
+}
+@code {
+    [Parameter] public int scenarioID { get; set; }
+
+    List<TraineeSimulationCombinedModel> trainees { get; set; }
+    List<SimulationGradesCombinedModel> simulationsWithGrades { get; set; }
+    List<GradeTemplateViewModel> gradeTemplates { get; set; }
+
+    int DisplayController { get; set; }
+    class ChartSelector
+    {
+        public int Selector { get; set; }
+        public string SelectorName { get; set; }
+    }
+    List<ChartSelector> chartSelectors { get; set; }
+
+    int gradeOptimalTime { get; set; }
+    int gradeToleratedTime = 1;
+    int maxToleration { get; set; }
+
+    void ChangeSelection(int value)
+    {
+        DisplayController = value;
+        gradeOptimalTime = gradeTemplates.First(x => x.ID == DisplayController).OptimalTime;
+        maxToleration = Convert.ToInt32((Convert.ToDouble(gradeOptimalTime) * 0.5));
+        foreach (var trainee in trainees)
+        {
+            trainee.TimeTaken = simulationsWithGrades.First(x => x.TraineeID == trainee.ID).Grades.First(x => x.TemplateID == value).TimeTaken;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        gradeTemplates = await http.GetFromJsonAsync<List<GradeTemplateViewModel>>($"api/gradetemplate/scenario/{scenarioID}");
+        chartSelectors = new List<ChartSelector>();
+        foreach (var gradeTemplate in gradeTemplates)
+        {
+            chartSelectors.Add(new ChartSelector { Selector = gradeTemplate.ID, SelectorName = gradeTemplate.Name });
+        }
+
+        var config = new AutoMapper.MapperConfiguration(cfg => cfg.CreateMap<TraineeCombinedModel, TraineeSimulationCombinedModel>());
+        var mapper = new AutoMapper.Mapper(config);
+
+        trainees = new List<TraineeSimulationCombinedModel>();
+        simulationsWithGrades = new List<SimulationGradesCombinedModel>();
+        foreach (int traineeID in CompareTrainees.List)
+        {
+            var traineeModel = mapper.Map<TraineeSimulationCombinedModel>(await http.GetFromJsonAsync<TraineeCombinedModel>($"api/trainee/{traineeID}"));
+            trainees.Add(traineeModel);
+
+            simulationsWithGrades.Add(await http.GetFromJsonAsync<SimulationGradesCombinedModel>($"api/trainee/{traineeID}/lastsimulations/{scenarioID}"));
+        }
+        DisplayController = chartSelectors[1].Selector;
+        ChangeSelection(DisplayController);
+    }
+}

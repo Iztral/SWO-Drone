@@ -1,0 +1,36 @@
+﻿<div class="row">
+    <div class="col-md-7">
+        <div class="row">
+            <RadzenTemplateForm TItem="ScenarioViewModel" Data="@scenario" Submit="@OnValidSubmit">
+                <RadzenFieldset Text="@ViewResources.Scenario">
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Name" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Name" @bind-Value="scenario.Name" />
+                            <RadzenRequiredValidator Component="Name" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Description" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Description" @bind-Value="scenario.Description" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        @ButtonText
+                    </button>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public ScenarioViewModel scenario { get; set; }
+    [Parameter] public string ButtonText { get; set; } = ViewResources.Save;
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+}

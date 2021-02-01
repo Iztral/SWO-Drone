@@ -1,0 +1,52 @@
+﻿<div class="row">
+    <div class="col-md-7">
+        <div class="row">
+            <RadzenTemplateForm TItem="LocationViewModel" Data="@location" Submit="@OnValidSubmit">
+                <RadzenFieldset Text="@ViewResources.Location">
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Name" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextBox style="display: block" Name="Name" @bind-Value="location.Name" />
+                            <RadzenRequiredValidator Component="Name" Text="@ViewResources.Required" Style="position: absolute" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Address" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Address" @bind-Value="location.Address" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Website" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Website" @bind-Value="location.Website" />
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px">
+                        <div class="col-md-4">
+                            <RadzenLabel Text="@ModelResources.Description" />
+                        </div>
+                        <div class="col">
+                            <RadzenTextArea style="display: block" Name="Description" @bind-Value="location.Description" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        @ButtonText
+                    </button>
+                </RadzenFieldset>
+            </RadzenTemplateForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public LocationViewModel location { get; set; }
+    [Parameter] public string ButtonText { get; set; } = ViewResources.Save;
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+}

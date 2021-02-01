@@ -1,0 +1,110 @@
+﻿@page "/instructor/scenario/compare/simulation/"
+@attribute [Authorize(Roles = "Instructor")]
+@inject SWO.Shared.Services.Compare CompareTrainees
+@inject HttpClient http
+@inject IJSRuntime js
+
+<h3>@ViewResources.Simulations</h3>
+<br>
+@if (simulations == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Trainee">
+                <RadzenGrid Data="@simulations"
+                            AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="SimulationDetailsModel" ColumnWidth="200px">
+                    <Columns>
+                        <RadzenGridColumn TItem="SimulationDetailsModel" Property="TraineeFullName" Title="@ModelResources.Trainee">
+                            <Template>
+                                <a href="instructor/trainee/@context.TraineeID">@context.TraineeFullName</a>
+                            </Template>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="SimulationDetailsModel" Property="InstructorFullName" Title="@ModelResources.Instructor"/>
+                        <RadzenGridColumn TItem="SimulationDetailsModel" Property="GradeSum" Title="@ModelResources.GradeSum" Width="50px">
+                            <Template>
+                                @context.GradeSum/@context.ScenarioMaxGradeSum
+                            </Template>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="SimulationDetailsModel" Property="Date" Title="@ModelResources.Date" FormatString="{0:MM:yyyy}" />
+                        <RadzenGridColumn TItem="SimulationDetailsModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false">
+                            <Template>
+                                <a class="btn btn-info" href="instructor/simulation/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                            </Template>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+            </Radzen.Blazor.RadzenTabsItem>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Charts">
+                <RadzenDropDown TValue="int" TextProperty="SelectorName" ValueProperty="Selector" Data="chartSelectors" @bind-Value="DisplayController">
+                </RadzenDropDown>
+                @if (DisplayController == 1 && simulationTimes.Count > 0)
+                {
+                    <RadzenChart>
+                        @foreach (var simulation in simulations)
+                        {
+                            <RadzenColumnSeries Data="@simulation.GradeViews" CategoryProperty="Name" Title="@simulation.ID.ToString()" LineType="LineType.Solid" ValueProperty="TimeTaken" />
+                        }
+                        <RadzenCategoryAxis>
+                            <RadzenAxisTitle Text="@ViewResources.Grades" />
+                        </RadzenCategoryAxis>
+                        <RadzenValueAxis>
+                            <RadzenGridLines Visible="true" />
+                            <RadzenAxisTitle Text="@ModelResources.SimulationTime" />
+                        </RadzenValueAxis>
+                    </RadzenChart>
+                }
+            </Radzen.Blazor.RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+    List<SimulationDetailsModel> simulations { get; set; }
+
+    int DisplayController { get; set; } = 1;
+
+    class ChartSelector
+    {
+        public int Selector { get; set; }
+        public string SelectorName { get; set; }
+    }
+
+    List<ChartSelector> chartSelectors = new List<ChartSelector>
+{
+        new ChartSelector
+        {
+            Selector = 1,
+            SelectorName = ViewResources.TimeComparisonChart
+        },
+    };
+
+    class SimulationTimeItem
+    {
+        public string SimulationID { get; set; }
+        public int SimulationTime { get; set; }
+    }
+
+    List<List<SimulationTimeItem>> simulationTimes = new List<List<SimulationTimeItem>>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        simulations = new List<SimulationDetailsModel>();
+
+        foreach (int simulationID in CompareTrainees.List)
+        {
+            simulations.Add(await http.GetFromJsonAsync<SimulationDetailsModel>($"api/simulation/{simulationID}/details"));
+        }
+
+        foreach (var simulation in simulations)
+        {
+            simulationTimes.Add(new List<SimulationTimeItem> { new SimulationTimeItem
+            {
+                SimulationID = ViewResources.Simulation +" " + simulation.ID.ToString(),
+                SimulationTime = simulation.SimulationTime
+            }});
+        }
+    }
+}

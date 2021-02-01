@@ -1,0 +1,40 @@
+﻿@page "/admin/sensor/{sensorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Sensor</h3>
+<br>
+@if (sensor == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+        <div class="row">
+            <div class="col-md-6">
+                <div>@ModelResources.Identifier</div>
+                <b>@sensor.ID</b>
+                <div style="margin-top:20px">@ModelResources.Name:</div>
+                <b>@sensor.Name</b>
+                <br />
+            </div>
+            <div class="col-md-6">
+                <div>@ModelResources.Category</div>
+                <p><b>@sensor.Category</b></p>
+                <div style="margin-top:20px">@ModelResources.Addendum</div>
+                <p><b>@sensor.Addendum</b></p>
+            </div>
+        </div>
+    </RadzenCard>
+}
+
+@code {
+    [Parameter] public int sensorID { get; set; }
+    SensorViewModel sensor { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        sensor = await http.GetFromJsonAsync<SensorViewModel>($"api/sensor/{sensorID}");
+    }
+}

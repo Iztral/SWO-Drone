@@ -1,0 +1,84 @@
+﻿@page "/admin/simulation/{simulationID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Simulations</h3>
+<br>
+@if (simulationDetails == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Simulation">
+                <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div>@ModelResources.Identifier</div>
+                            <b>@simulationDetails.ID</b>
+                            <div style="margin-top:20px">@ModelResources.Date:</div>
+                            <b>@simulationDetails.Date</b>
+                            <div style="margin-top:20px">@ModelResources.GradeSum</div>
+                            <b>@simulationDetails.GradeSum</b>
+                            <br />
+                        </div>
+                        <div class="col-md-6">
+                            <div>@ModelResources.Trainee</div>
+                            <b>
+                                <a href="admin/user/@simulationDetails.TraineeID">
+                                    @simulationDetails.TraineeFullName
+                                </a>
+                            </b>
+                            <div style="margin-top:20px">@ModelResources.Instructor</div>
+                            <b>
+                                <a href="admin/user/@simulationDetails.InstructorID">
+                                    @simulationDetails.InstructorID
+                                </a>
+                            </b>
+                            <div style="margin-top:20px">@ModelResources.Scenario</div>
+                            <b>
+                                <a href="admin/scenario/@simulationDetails.ScenarioID">
+                                    @simulationDetails.ScenarioName
+                                </a>
+                            </b>
+                        </div>
+                    </div>
+                </RadzenCard>
+            </Radzen.Blazor.RadzenTabsItem>
+            @if (simulationDetails.GradeViews.Count > 0)
+            {
+                <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Grades">
+                    <RadzenGrid Data="@simulationDetails.GradeViews"
+                                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="GradeIndexModel" ColumnWidth="200px">
+                        <Columns>
+                            <RadzenGridColumn TItem="GradeIndexModel" Property="Name" Title="@ModelResources.Name" />
+                            <RadzenGridColumn TItem="GradeIndexModel" Property="Points" Title="@ModelResources.Points">
+                                <Template>
+                                    @context.Points/@context.MaxPoints
+                                </Template>
+                            </RadzenGridColumn>
+                            <RadzenGridColumn TItem="GradeIndexModel" Property="TimeTaken" Title="@ModelResources.TimeTaken">
+                                <Template Context="data">
+                                    @data.TimeTaken (s)
+                                </Template>
+                            </RadzenGridColumn>
+                            <RadzenGridColumn TItem="GradeIndexModel" Property="Addendum" Title="@ModelResources.Addendum" />
+                        </Columns>
+                    </RadzenGrid>
+                </Radzen.Blazor.RadzenTabsItem>
+            }
+
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+    [Parameter] public int simulationID { get; set; }
+    SimulationDetailsModel simulationDetails { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        simulationDetails = await http.GetFromJsonAsync<SimulationDetailsModel>($"api/simulation/{simulationID}/details");
+    }
+}

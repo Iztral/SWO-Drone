@@ -1,0 +1,101 @@
+﻿@page "/admin/scenario/{scenarioID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Scenario</h3>
+<br>
+@if (scenario == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Scenario">
+                <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div>@ModelResources.Identifier</div>
+                            <b>@scenario.ID</b>
+                            <div style="margin-top:20px">@ModelResources.Simulator:</div>
+                            <b>
+                                <a href="admin/simulator/@scenario.SimulatorID">
+                                    @scenario.SimulatorName
+                                </a>
+                            </b>
+                        </div>
+                        <div class="col-md-6">
+                            <div>@ModelResources.Name</div>
+                            <b>@scenario.Name</b>
+                            <div style="margin-top:20px">@ModelResources.MaxGradeSum</div>
+                            <b>@scenario.MaxGradeSum</b>
+                        </div>
+                    </div>
+                </RadzenCard>
+            </Radzen.Blazor.RadzenTabsItem>
+            @if (!string.IsNullOrEmpty(scenario.Description))
+            {
+                <Radzen.Blazor.RadzenTabsItem Text="@ModelResources.Description">
+                    <RadzenCard class="mat-elevation-z5" Style="width:600px; margin-bottom: 20px; height:500px;">
+                        <p>@scenario.Description</p>
+                    </RadzenCard>
+                </Radzen.Blazor.RadzenTabsItem>
+            }
+            @if (gradeInfos.Count > 0)
+            {
+                <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.GradeTemplates">
+                    <RadzenGrid Data="@gradeInfos"
+                                AllowFiltering="true" AllowSorting="true" TItem="ScenarioGradesTemplatesInfoModel" ColumnWidth="200px">
+                        <Columns>
+                            <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Name" Title="@ModelResources.Name" />
+                            <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="MaxPoints" Title="@ModelResources.MaxPoints" Width="30px" />
+                            <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Description" Title="@ModelResources.Description" />
+                            <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Note" Title="@ModelResources.Note" />
+                            <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Phase" Title="@ModelResources.Phase" Width="30px" />
+                            <RadzenGridColumn TItem="ScenarioGradesTemplatesInfoModel" Property="Assigned" Title="@ModelResources.Assigned" Width="30px">
+                                <Template>
+                                    <RadzenCheckBox @bind-Value="@context.Assigned" />
+                                </Template>
+                            </RadzenGridColumn>
+                        </Columns>
+                    </RadzenGrid>
+                    <RadzenButton Click="@SaveAssignedTemplates">@ViewResources.Save</RadzenButton>
+                </Radzen.Blazor.RadzenTabsItem>
+            }
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+    [Parameter] public int scenarioID { get; set; }
+
+    ScenarioSimulatorCombinedModel scenario { get; set; }
+
+    List<ScenarioGradesTemplatesInfoModel> gradeInfos { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        scenario = await http.GetFromJsonAsync<ScenarioSimulatorCombinedModel>($"api/scenario/{scenarioID}/simulator");
+
+        gradeInfos = await http.GetFromJsonAsync<List<ScenarioGradesTemplatesInfoModel>>($"api/scengradetemp/scenario/{scenarioID}");
+    }
+
+    async void SaveAssignedTemplates(MouseEventArgs e)
+    {
+        List<ScenarioGradesTemplatesViewModel> gradesTemplates = new List<ScenarioGradesTemplatesViewModel>();
+        foreach (var gradeInfo in gradeInfos)
+        {
+            gradesTemplates.Add(new ScenarioGradesTemplatesViewModel
+            {
+                ID = gradeInfo.ID,
+                Assigned = gradeInfo.Assigned,
+                ScenarioID = gradeInfo.ScenarioID,
+                TemplateID = gradeInfo.TemplateID
+            });
+        }
+
+        await http.PutAsJsonAsync("api/scengradetemp/list", gradesTemplates);
+        await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+        await OnInitializedAsync();
+    }
+}

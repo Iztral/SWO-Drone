@@ -1,0 +1,98 @@
+﻿@page "/instructor/trainee/compare/"
+@attribute [Authorize(Roles = "Instructor")]
+@inject SWO.Shared.Services.Compare CompareTrainees
+@inject HttpClient http
+@inject IJSRuntime js
+
+
+<h3>@ViewResources.Trainee</h3>
+<br>
+@if (trainees == null)
+{
+    <Loading />
+}
+else
+{
+    <RadzenTabs>
+        <Tabs>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Trainee">
+                <RadzenGrid Data="@trainees"
+                            AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="TraineeCombinedModel" ColumnWidth="200px">
+                    <Columns>
+                        <RadzenGridColumn TItem="TraineeCombinedModel" Property="Name" Title="@ModelResources.UName"/>
+                        <RadzenGridColumn TItem="TraineeCombinedModel" Property="Surname" Title="@ModelResources.Surname"/>
+                    </Columns>
+                </RadzenGrid>
+            </Radzen.Blazor.RadzenTabsItem>
+            <Radzen.Blazor.RadzenTabsItem Text="@ViewResources.Charts">
+                <RadzenDropDown TValue="int" TextProperty="SelectorName" ValueProperty="Selector" Data="chartSelectors" @bind-Value="DisplayController">
+                </RadzenDropDown>
+
+                @if (DisplayController == 1)
+                {
+                    <RadzenChart>
+                        @foreach (var traineeOverallScenarios in overallScenariosForTrainees)
+                        {
+                            @if (traineeOverallScenarios.ScenarioChartModels != null)
+                            {
+                                <RadzenColumnSeries Data="@traineeOverallScenarios.ScenarioChartModels" CategoryProperty="Name"
+                                                    Title="@GetTraineeFullName(traineeOverallScenarios.TraineeID)"
+                                                    LineType="LineType.Solid" ValueProperty="AverageScore" />
+                            }
+                        }
+                        <RadzenColumnOptions Radius="5" />
+                        <RadzenValueAxis Formatter="@FormatPercentage" FormatString="{0:P}">
+                            <RadzenGridLines Visible="true" />
+                            <RadzenAxisTitle Text="@ViewResources.AveragePercentage" />
+                        </RadzenValueAxis>
+                    </RadzenChart>
+                }
+
+            </Radzen.Blazor.RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+}
+@code {
+    List<TraineeCombinedModel> trainees { get; set; }
+    List<TraineeOverallScenarioChartModel> overallScenariosForTrainees { get; set; }
+
+    int DisplayController { get; set; } = 1;
+
+    class ChartSelector
+    {
+        public int Selector { get; set; }
+        public string SelectorName { get; set; }
+    }
+
+    List<ChartSelector> chartSelectors = new List<ChartSelector>
+{
+        new ChartSelector
+        {
+            Selector = 1,
+            SelectorName = ViewResources.AverageScenarioBar
+        },
+    };
+
+    string FormatPercentage(object value)
+    {
+        return ((double)value).ToString();
+    }
+
+    string GetTraineeFullName(int traineeID)
+    {
+        var trainee = trainees.First(x => x.ID == traineeID);
+        return (trainee.Name + " " + trainee.Surname);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        trainees = new List<TraineeCombinedModel>();
+        overallScenariosForTrainees = new List<TraineeOverallScenarioChartModel>();
+
+        foreach (int traineeID in CompareTrainees.List)
+        {
+            trainees.Add(await http.GetFromJsonAsync<TraineeCombinedModel>($"api/trainee/{traineeID}"));
+            overallScenariosForTrainees.Add(await http.GetFromJsonAsync<TraineeOverallScenarioChartModel>($"api/trainee/scenario/compare/{traineeID}"));
+        }
+    }
+}

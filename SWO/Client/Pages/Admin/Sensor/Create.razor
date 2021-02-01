@@ -1,0 +1,18 @@
+﻿@page "/admin/sensor/create/{simulatorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+<h3>@ViewResources.Create</h3>
+
+<Form ButtonText="@ViewResources.CreateSensor" sensor="@sensor" OnValidSubmit="@CreateSensor" />
+
+@code {
+    [Parameter] public int simulatorID { get; set; }
+    SensorViewModel sensor = new SensorViewModel();
+    async Task CreateSensor()
+    {
+        sensor.SimulatorID = simulatorID;
+        await http.PostAsJsonAsync("api/sensor", sensor);
+        uriHelper.NavigateTo($"admin/sensor/simulator/{simulatorID}");
+    }
+}

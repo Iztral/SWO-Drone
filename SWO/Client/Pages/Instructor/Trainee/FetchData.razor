@@ -1,0 +1,69 @@
+﻿@page "/instructor/trainee"
+@attribute [Authorize(Roles = "Instructor")]
+@inject SWO.Shared.Services.Compare CompareTrainees
+@inject HttpClient http
+@inject IJSRuntime js
+@inject NavigationManager uriHelper
+
+<h3>@ViewResources.Trainees</h3>
+<br>
+@if (trainees == null)
+{
+    <Loading />
+}
+else if (trainees.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@trainees"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="TraineeCombinedModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="TraineeCombinedModel" Property="Name" Title="@ModelResources.Name"/>
+            <RadzenGridColumn TItem="TraineeCombinedModel" Property="Surname" Title="@ModelResources.Surname"/>
+            <RadzenGridColumn TItem="TraineeCombinedModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false">
+                <Template>
+                    <a class="btn btn-info" href="instructor/trainee/@context.ID"><span class="oi oi-list" aria-hidden="true" /></a>
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="TraineeCombinedModel" Property="Compare" Title="@ViewResources.Compare" Width="50px" Filterable="false" Sortable="false">
+                <Template>
+                    <RadzenCheckBox TValue="bool" Change="@(args => AddToCompare(args, context.ID))" />
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+    <RadzenButton Click="@Compare">@ViewResources.Compare</RadzenButton>
+}
+
+@code {
+    TraineeCombinedModel[] trainees { get; set; }
+
+    void AddToCompare(bool value, int traineeID)
+    {
+
+        if (!CompareTrainees.List.Exists(x => x == traineeID) && value == true)
+        {
+            CompareTrainees.List.Add(traineeID);
+        }
+        else if (CompareTrainees.List.Exists(x => x == traineeID) && value == false)
+        {
+            CompareTrainees.List.Remove(traineeID);
+        }
+    }
+
+    void Compare()
+    {
+        if (CompareTrainees.List.Count > 0)
+        {
+            uriHelper.NavigateTo($"instructor/trainee/compare/");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CompareTrainees.List = new List<int>();
+        trainees = await http.GetFromJsonAsync<TraineeCombinedModel[]>("api/trainee");
+    }
+}

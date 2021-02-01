@@ -1,0 +1,36 @@
+﻿@page "/admin/simulator/edit/{simulatorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+<h3>@ViewResources.Edit</h3>
+
+@if (locations == null)
+{
+    <Loading />
+}
+else if (locations.Length == 0)
+{
+    <text>@ViewResources.NotEnLocations</text>
+}
+else
+{
+    <Form ButtonText="@ViewResources.Update" simulator="@simulator" locations="@locations" OnValidSubmit="@EditSimulator" />
+}
+
+@code {
+    [Parameter] public int simulatorID { get; set; }
+    SimulatorViewModel simulator = new SimulatorViewModel();
+    LocationViewModel[] locations { get; set; }
+    protected async override Task OnParametersSetAsync()
+    {
+        simulator = await http.GetFromJsonAsync<SimulatorViewModel>($"api/simulator/{simulatorID}");
+        locations = await http.GetFromJsonAsync<LocationViewModel[]>($"api/location");
+    }
+    async Task EditSimulator()
+    {
+        await http.PutAsJsonAsync("api/simulator", simulator);
+        await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+        uriHelper.NavigateTo("admin/simulator");
+    }
+}

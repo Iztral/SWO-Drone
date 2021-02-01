@@ -1,0 +1,7 @@
+﻿<a class="btn btn-info" href="admin/@PageType/@ID"><span class="oi oi-list" aria-hidden="true" /></a>
+<a class="btn btn-success" href="admin/@PageType/edit/@ID"><span class="oi oi-pencil" aria-hidden="true" /></a>
+
+@code {
+    [Parameter] public int ID { get; set; }
+    [Parameter] public string PageType { get; set; }
+}

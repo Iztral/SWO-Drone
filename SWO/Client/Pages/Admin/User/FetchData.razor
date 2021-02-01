@@ -1,0 +1,72 @@
+﻿@page "/admin/user"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+<h3>@ViewResources.Users</h3>
+<div class="form-group">
+    <a class="btn btn-success" href="admin/user/create"><i class="oi oi-plus"></i> @ViewResources.CreateNew</a>
+</div>
+<div class="form-group">
+    <RadzenUpload Url="api/user/import" Accept="application/xml" Style="margin-bottom: 20px;" Complete="@Completed" ChooseText="@ViewResources.Load_Users" />
+</div>
+<br>
+@if (users == null)
+{
+    <Loading />
+}
+else if (users.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@(users.Where(e => currentRole >= 0 ? e.Role == currentRole : true))"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="MemberViewModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="MemberViewModel" Property="Email" Title="@ModelResources.Email" />
+            <RadzenGridColumn TItem="MemberViewModel" Property="Name" Title="@ModelResources.UName" />
+            <RadzenGridColumn TItem="MemberViewModel" Property="Surname" Title="@ModelResources.Surname" />
+            <RadzenGridColumn TItem="MemberViewModel" Property="Role" Title="@ModelResources.Role">
+                <FilterTemplate>
+                    <RadzenDropDown @bind-Value="@currentRole" TextProperty="Text" ValueProperty="Value" Style="width:100%"
+                                    Data="@(Enum.GetValues(typeof(SWO.Models.DataModels.Role)).Cast<SWO.Models.DataModels.Role>().Select(t => new { Text = $"{t.GetDescription()}", Value = t }))" />
+                </FilterTemplate>
+                <Template>
+                    @context.Role.GetDescription()
+                </Template>
+            </RadzenGridColumn>
+            <RadzenGridColumn TItem="MemberViewModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <ActionButtons ID="@context.ID" PageType="user" />
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+}
+@code {
+    MemberViewModel[] users { get; set; }
+
+    SWO.Models.DataModels.Role currentRole = Models.DataModels.Role.All;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await http.GetFromJsonAsync<MemberViewModel[]>("api/user");
+    }
+
+    async Task Completed(UploadCompleteEventArgs args)
+    {
+        await OnInitializedAsync();
+    }
+
+    async Task Delete(int userID)
+    {
+        var user = users.First(x => x.ID == userID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + user.Name + " #" + user.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/user/{userID}");
+            await OnInitializedAsync();
+        }
+    }
+}

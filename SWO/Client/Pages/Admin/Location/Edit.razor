@@ -1,0 +1,30 @@
+﻿@page "/admin/location/edit/{locationID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject NavigationManager uriHelper
+@inject IJSRuntime js
+<h3>@ViewResources.Edit</h3>
+
+@if (location == null)
+{
+    <Loading />
+}
+else
+{
+    <Form ButtonText="@ViewResources.Update" location="@location" OnValidSubmit="@EditLocation" />
+}
+
+@code {
+    [Parameter] public int locationID { get; set; }
+    LocationViewModel location = new LocationViewModel();
+    protected async override Task OnParametersSetAsync()
+    {
+        location = await http.GetFromJsonAsync<LocationViewModel>($"api/location/{locationID}");
+    }
+    async Task EditLocation()
+    {
+        await http.PutAsJsonAsync("api/location", location);
+        await js.InvokeVoidAsync("alert", ViewResources.UpdateSuccess);
+        uriHelper.NavigateTo("admin/location");
+    }
+}

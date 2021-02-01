@@ -1,0 +1,58 @@
+﻿@page "/admin/gradetemplate/simulator/{simulatorID:int}"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient http
+@inject IJSRuntime js
+
+<h3>@ViewResources.GradeTemplates</h3>
+<div class="form-group">
+    <a class="btn btn-success" href="admin/gradetemplate/create/@simulatorID"><i class="oi oi-plus"></i>@ViewResources.CreateNew</a>
+</div>
+
+<br>
+@if (gradeTemplates == null)
+{
+    <Loading />
+}
+else if (gradeTemplates.Length == 0)
+{
+    <text>@ViewResources.NoRecords</text>
+}
+else
+{
+    <RadzenGrid Data="@gradeTemplates"
+                AllowFiltering="true" AllowPaging="true" AllowSorting="true" TItem="GradeTemplateViewModel" ColumnWidth="200px">
+        <Columns>
+            <RadzenGridColumn TItem="GradeTemplateViewModel" Property="Name" Title="@ModelResources.Name" />
+            <RadzenGridColumn TItem="GradeTemplateViewModel" Property="Description" Title="@ModelResources.Description" />
+            <RadzenGridColumn TItem="GradeTemplateViewModel" Property="MaxPoints" Title="@ModelResources.MaxPoints" Width="30px" />
+            <RadzenGridColumn TItem="GradeTemplateViewModel" Property="Phase" Title="@ModelResources.Phase" Width="30px" />
+            <RadzenGridColumn TItem="GradeTemplateViewModel" Property="Action" Title="@ViewResources.Actions" Filterable="false" Sortable="false" Width="180px">
+                <Template>
+                    <ActionButtons ID="@context.ID" PageType="gradetemplate" />
+                    <button class="btn btn-danger" @onclick="@(() => Delete(context.ID))"><span class="oi oi-trash" aria-hidden="true" /></button>
+                </Template>
+            </RadzenGridColumn>
+        </Columns>
+    </RadzenGrid>
+    <br />
+    <a href="admin/simulator/@simulatorID/"><h3>@ViewResources.BackSimulator</h3></a>
+}
+@code {
+    [Parameter] public int simulatorID { get; set; }
+    GradeTemplateViewModel[] gradeTemplates { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        gradeTemplates = await http.GetFromJsonAsync<GradeTemplateViewModel[]>($"api/gradetemplate/simulator/{simulatorID}");
+    }
+    async Task Delete(int gradeTemplateID)
+    {
+        var gradeTemplate = gradeTemplates.First(x => x.ID == gradeTemplateID);
+        string deleteMessage = ViewResources.DeleteConfirm + " " + gradeTemplate.Name + " #" + gradeTemplate.ID;
+        if (await js.InvokeAsync<bool>("confirm", deleteMessage))
+        {
+            await http.DeleteAsync($"api/gradetemplate/{gradeTemplateID}");
+            await OnInitializedAsync();
+        }
+    }
+}
